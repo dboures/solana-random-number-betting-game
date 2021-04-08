@@ -1,5 +1,5 @@
 /*-dump.txt
 /*.so
-/target/
-/test-ledger/
+/solana-program/target/
+/solana-program/test-ledger/
 /*Cargo.lock
