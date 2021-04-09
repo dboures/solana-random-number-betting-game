@@ -1,3 +1,6 @@
+const initEscrow = require("./utils/initEscrow.js").initEscrow;
+const swap = require("./utils/swap.js").swap;
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -15,14 +18,16 @@ app.get('/', function (req, res) {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-app.get('/api/ping', function (req, res) {
-  console.log('meh');
-  return res.send({goo: 'pong'});
+app.post('/api/swap', async function (req, res) {
+  let swapResult = await swap(req.body);
+  return res.send(swapResult);
 });
 
-app.post('/api/init', function (req, res) {
-  console.log(req.body);
-  return res.send({boo: req.body});
+app.post('/api/init', async function (req, res) {
+  let initResult = await initEscrow(req.body);
+  console.log('init complete');
+  return res.send(initResult);
+
 });
 
 app.listen(process.env.PORT || 3001);

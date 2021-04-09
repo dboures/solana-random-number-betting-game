@@ -2,4 +2,5 @@
 /*.so
 /solana-program/target/
 /solana-program/test-ledger/
+/betting-ui/test-ledger/
 /*Cargo.lock

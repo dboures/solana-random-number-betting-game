@@ -4,18 +4,20 @@ export class Home extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            programId: '',
-            alicePrivateKey: '',
-            aliceXPubKey: '',
-            aliceXTokens: 0,
-            aliceYTokens: 0,
-            aliceYPubKey: '',
+            programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
+            alicePrivateKey: '61,167,19,154,243,231,175,159,135,78,194,167,159,147,246,36,147,139,124,159,147,247,46,230,41,103,128,58,44,4,98,196,90,124,250,30,176,253,215,147,120,179,77,163,70,168,193,139,122,43,176,86,31,252,85,219,45,90,188,85,95,250,220,47',
+            aliceXPubKey: '7unZ6SfG87HdCCUm2s2UkHtWCmRfem42xTxYSPMQF8PA',
+            aliceYPubKey: 'Fa7BuDfKTU334rsRG4rQDigLdU9Kp7a9UC3W17Ko925t',
+            aliceXTokens: 1,
+            aliceYTokens: 1,
 
-            bobPrivateKey: '',
-            bobXPubKey: '',
-            bobXTokens: 0,
-            bobYTokens: 0,
-            bobYPubKey: '',
+            bobPrivateKey: '211,208,37,61,33,9,231,26,133,105,242,232,146,33,169,107,48,214,29,26,82,238,244,41,131,146,218,91,104,27,233,107,246,38,23,174,204,84,149,244,187,85,115,186,89,32,213,245,121,100,154,223,23,112,23,128,93,48,189,1,157,196,255,245',
+            bobXPubKey: '7WPGdaMqXqqrv7MRtpmmxAZHZyLGEM4wHRSjiVzWyg1',
+            bobYPubKey: '434qkxZe8cM5LUxoGZnbAjzsZ8FttzjrKbYeskvzra1w',
+            bobXTokens: 1,
+            bobYTokens: 1,
+
+            escrowAccountPubkey: '',
 
         };
         this.handleChange = this.handleChange.bind(this);
@@ -29,10 +31,6 @@ export class Home extends Component {
 
     async handleInitEscrow(event) {
         console.log('init escrow');
-
-        // const response = fetch("api/ping");
-        // const ja = await response.then(res => res.json());
-
         let initData = {
             alicePrivateKey: this.state.alicePrivateKey,
             aliceXPubKey: this.state.aliceXPubKey,
@@ -42,33 +40,49 @@ export class Home extends Component {
             programId: this.state.programId
         }
 
-        console.log(JSON.stringify(initData));
-
-        fetch('api/init', {
+        const response = await fetch('api/init', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
               },
             body: JSON.stringify(initData)
-        }).then(function (response) {
-            console.log(response.json());
-        })
+        }).catch(error => console.log(error));
 
-        // const response = initEscrow();
+        let responseData = await response.json();
+        console.log('resp');
+        console.log(responseData);
 
-        // const res = await response.then(res => res.json());
+        this.setState({
+            escrowAccountPubkey: responseData.escrowAccountPubkey
+            });
 
-        // console.log(res);
-        //call init escrow fn here
         event.preventDefault();
     }
 
     async handleSwap(event) {
         console.log('swap');
 
-        const response = fetch("api/ping");
-        const ja = await response.then(res => res.json());
-        console.log(ja);
+        let swapData = {
+            bobPrivateKey: this.state.bobPrivateKey,
+            escrowAccountPubkey: this.state.escrowAccountPubkey,
+            bobXPubKey: this.state.bobXPubKey,
+            bobYPubKey: this.state.bobYPubKey,
+            bobXTokens: this.state.bobXTokens,
+            programId: this.state.programId
+        };
+
+        const response = await fetch('api/swap', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+              },
+            body: JSON.stringify(swapData)
+        }).catch(error => console.log(error));
+
+        let responseData = await response.json();
+        console.log(responseData);
+        
+
         event.preventDefault();
     }
 
@@ -77,7 +91,7 @@ export class Home extends Component {
         return (
             <div className="mt-5 d-flex justify-content-left">
                 <h3>Bet Your Solana With a Friend</h3>
-                <form onSubmit={this.handleInitEscrow.bind(this)}>
+                <form>
                     <div>
                         <label>
                             ProgramId:
@@ -135,10 +149,14 @@ export class Home extends Component {
                         </label>
                     </div>
                     <div>
-                        <button>Init Escrow</button>
-                        {/* <button onClick={this.handleSwap.bind(this)}>Swap</button> */}
+                        <label>
+                            Escrow Account Pubkey:
+                            <input type="text" name="escrowAccountPubkey" value={this.state.escrowAccountPubkey} disabled={true} onChange={this.handleChange} />
+                        </label>
                     </div>
                 </form>
+                <button onClick={this.handleInitEscrow.bind(this)}>Init Escrow</button>
+                <button onClick={this.handleSwap.bind(this)}>Swap</button>
             </div>
         )
     }
