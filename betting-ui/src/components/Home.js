@@ -1,8 +1,13 @@
 import React, { Component } from 'react';
+import {Swap} from '../utils/swap';
+import {initEscrow} from '../utils/initEscrow';
+import {Connect} from './Connect';
+
 
 export class Home extends Component {
     constructor(props) {
         super(props);
+        
         this.state = {
             programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
             alicePrivateKey: '61,167,19,154,243,231,175,159,135,78,194,167,159,147,246,36,147,139,124,159,147,247,46,230,41,103,128,58,44,4,98,196,90,124,250,30,176,253,215,147,120,179,77,163,70,168,193,139,122,43,176,86,31,252,85,219,45,90,188,85,95,250,220,47',
@@ -30,27 +35,14 @@ export class Home extends Component {
     }
 
     async handleInitEscrow(event) {
-        console.log('init escrow');
-        let initData = {
-            alicePrivateKey: this.state.alicePrivateKey,
-            aliceXPubKey: this.state.aliceXPubKey,
-            aliceXTokens: this.state.aliceXTokens,
-            aliceYPubKey: this.state.aliceYPubKey,
-            aliceYTokens: this.state.aliceYTokens,
-            programId: this.state.programId
-        }
 
-        const response = await fetch('api/init', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-              },
-            body: JSON.stringify(initData)
-        }).catch(error => console.log(error));
-
-        let responseData = await response.json();
-        console.log('resp');
-        console.log(responseData);
+        let responseData = await initEscrow(
+            this.state.alicePrivateKey,
+            this.state.aliceXPubKey,
+            this.state.aliceXTokens,
+            this.state.aliceYPubKey,
+            this.state.aliceYTokens,
+            this.state.programId);
 
         this.setState({
             escrowAccountPubkey: responseData.escrowAccountPubkey
@@ -60,29 +52,15 @@ export class Home extends Component {
     }
 
     async handleSwap(event) {
-        console.log('swap');
+        Swap(
+            this.state.bobPrivateKey,
+            this.state.escrowAccountPubkey,
+            this.state.bobXPubKey,
+            this.state.bobYPubKey,
+            this.state.bobXTokens,
+            this.state.programId);
 
-        let swapData = {
-            bobPrivateKey: this.state.bobPrivateKey,
-            escrowAccountPubkey: this.state.escrowAccountPubkey,
-            bobXPubKey: this.state.bobXPubKey,
-            bobYPubKey: this.state.bobYPubKey,
-            bobXTokens: this.state.bobXTokens,
-            programId: this.state.programId
-        };
-
-        const response = await fetch('api/swap', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-              },
-            body: JSON.stringify(swapData)
-        }).catch(error => console.log(error));
-
-        let responseData = await response.json();
-        console.log(responseData);
         
-
         event.preventDefault();
     }
 
@@ -91,6 +69,7 @@ export class Home extends Component {
         return (
             <div className="mt-5 d-flex justify-content-left">
                 <h3>Bet Your Solana With a Friend</h3>
+                <Connect/>
                 <form>
                     <div>
                         <label>

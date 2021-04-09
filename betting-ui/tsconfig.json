@@ -22,5 +22,5 @@
   },
   "include": [
     "src"
-, "utils/initEscrow.js", "utils/layout.js", "utils"  ]
+  ]
 }
