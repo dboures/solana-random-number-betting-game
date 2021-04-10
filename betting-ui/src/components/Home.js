@@ -2,12 +2,15 @@ import React, { Component } from 'react';
 import {Swap} from '../utils/swap';
 import {initEscrow} from '../utils/initEscrow';
 import {Cancel} from '../utils/cancel';
+import { loadTokensInEscrow } from '../utils/loadTokensInEscrow';
 import {Connect} from './Connect';
 
 
 export class Home extends Component {
     constructor(props) {
         super(props);
+
+        this.escrowXAccount = ''
         
         this.state = {
             programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
@@ -24,6 +27,7 @@ export class Home extends Component {
             bobYTokens: 1,
 
             escrowAccountPubkey: '',
+            escrowAccountTokens: 0
 
         };
         this.handleChange = this.handleChange.bind(this);
@@ -48,6 +52,11 @@ export class Home extends Component {
         this.setState({
             escrowAccountPubkey: responseData.escrowAccountPubkey
             });
+
+        this.escrowXAccount = responseData.XTokenTempAccountPubkey;
+
+        //call pattern to update
+        this.getEscrowTokens(this.escrowXAccount); 
 
         event.preventDefault();
     }
@@ -75,6 +84,25 @@ export class Home extends Component {
         event.preventDefault();
     }
 
+    // Returns a Promise that resolves after "ms" Milliseconds
+    timer(ms) {
+        return new Promise(res => setTimeout(res, ms));
+    }
+
+    async getEscrowTokens (escrowXAccount) {
+        for (var i = 0; i < 5; i++) {
+            let res = await loadTokensInEscrow(escrowXAccount);
+
+            if (typeof res?.result?.value?.uiAmount != 'undefined'){
+                this.setState({
+                    escrowAccountTokens: res?.result?.value?.uiAmount
+                    });
+                    break;
+                }
+
+            await this.timer(4000);
+        }
+    }
 
     render() {
         return (
@@ -142,6 +170,10 @@ export class Home extends Component {
                         <label>
                             Escrow Account Pubkey:
                             <input type="text" name="escrowAccountPubkey" value={this.state.escrowAccountPubkey} disabled={true} onChange={this.handleChange} />
+                        </label>
+                        <label>
+                            Tokens in Escrow Account:
+                            <input type="text" name="escrowAccountTokens" value={this.state.escrowAccountTokens} disabled={true} onChange={this.handleChange} />
                         </label>
                     </div>
                 </form>
