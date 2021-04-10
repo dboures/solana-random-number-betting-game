@@ -3,6 +3,7 @@
 /solana-program/target/
 /solana-program/test-ledger/
 /betting-ui/test-ledger/
+/test-ledger
 /*Cargo.lock
 
 node_modules

@@ -26,8 +26,12 @@ impl Processor {
                 Self::process_init_escrow(accounts, amount, program_id)
             }
             EscrowInstruction::Exchange { amount } => {
-                msg!("instruction: Exchange");
+                msg!("Instruction: Exchange");
                 Self::process_exchange(accounts, amount, program_id)
+            }
+            EscrowInstruction::Cancel { amount } => {
+                msg!("Instruction: Cancel");
+                Self::cancel_exchange(accounts, amount, program_id)
             }
         }
     }
@@ -219,6 +223,104 @@ impl Processor {
                 token_program.clone(),
             ],
         )?;
+
+        Ok(())
+    }
+
+    pub fn cancel_exchange(
+        accounts: &[AccountInfo],
+        amount: u64,
+        program_id: &Pubkey,
+    ) -> ProgramResult {
+        let account_info_iter = &mut accounts.iter();
+        let canceller_account = next_account_info(account_info_iter)?;
+
+        if !canceller_account.is_signer {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let canceller_token_account = next_account_info(account_info_iter)?;
+
+        let escrow_account = next_account_info(account_info_iter)?;
+
+        msg!("Does token program own escrow token account?...");
+        let escrow_token_account = next_account_info(account_info_iter)?;
+        if *escrow_token_account.owner != spl_token::id() {
+            return Err(ProgramError::IncorrectProgramId);
+        }
+
+        let escrow_info = Escrow::unpack(&escrow_account.data.borrow())?;
+
+        msg!("Does escrow account temp token pubkey match escrow token account key?...");
+        if escrow_info.temp_token_account_pubkey != *escrow_token_account.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        msg!("Was escrow initialized?...");
+        let escrow_info = Escrow::unpack_unchecked(&escrow_account.data.borrow())?;
+        if !escrow_info.is_initialized() {
+            return Err(ProgramError::UninitializedAccount);
+        }
+
+        msg!("Was escrow initialized by canceler?...");
+        if escrow_info.initializer_pubkey != *canceller_account.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        let token_program = next_account_info(account_info_iter)?;
+
+        let (pda, bump_seed) = Pubkey::find_program_address(&[b"escrow"], program_id);
+
+        let pda_account = next_account_info(account_info_iter)?;
+
+        //transfer token back
+        let transfer_to_initializer_ix = spl_token::instruction::transfer(
+            token_program.key,
+            escrow_token_account.key,    //source
+            canceller_token_account.key, //dest
+            &pda,                        // authority
+            &[&pda],                     // signer
+            amount,                      //amount
+        )?;
+
+        msg!("Calling the token program to return tokens to the initializer...");
+        invoke_signed(
+            &transfer_to_initializer_ix,
+            &[
+                escrow_token_account.clone(),
+                canceller_token_account.clone(),
+                pda_account.clone(),
+                token_program.clone(),
+            ],
+            &[&[&b"escrow"[..], &[bump_seed]]],
+        )?;
+
+        //close holding account
+        let close_pdas_temp_acc_ix = spl_token::instruction::close_account(
+            token_program.key,
+            escrow_token_account.key,
+            canceller_account.key,
+            &pda,
+            &[&pda],
+        )?;
+        msg!("Calling the token program to close pda's temp account...");
+        invoke_signed(
+            &close_pdas_temp_acc_ix,
+            &[
+                escrow_token_account.clone(),
+                canceller_account.clone(),
+                pda_account.clone(),
+                token_program.clone(),
+            ],
+            &[&[&b"escrow"[..], &[bump_seed]]],
+        )?;
+
+        msg!("Closing the escrow account...");
+        **canceller_account.lamports.borrow_mut() = canceller_account
+            .lamports()
+            .checked_add(escrow_account.lamports())
+            .ok_or(EscrowError::AmountOverflow)?;
+        **escrow_account.lamports.borrow_mut() = 0;
 
         Ok(())
     }
