@@ -9,7 +9,6 @@ const connection = new Connection("http://localhost:8899", 'singleGossip');
 //let connection = new Connection(clusterApiUrl('devnet'));
 
 export const initEscrow = async ( // TODO: need to error proof eveything
-    privateKeyByteArray: string,
     initializerXTokenAccountPubkeyString: string,
     amountXTokensToSendToEscrow: number,
     initializerReceivingTokenAccountPubkeyString: string,
@@ -19,6 +18,7 @@ export const initEscrow = async ( // TODO: need to error proof eveything
     let providerUrl = 'https://www.sollet.io';
     let wallet = new Wallet(providerUrl);
 
+    //TODO: refactor wallet into it's own thing
     //IDK about these messages
     wallet.on('connect', (publicKey: { toBase58: () => string; }) => console.log('Connected to ' + publicKey.toBase58()));
     wallet.on('disconnect', () => console.log('Disconnected'));
@@ -86,7 +86,6 @@ export const initEscrow = async ( // TODO: need to error proof eveything
     }
 
     let serialized = tx.serialize();
-
     await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'});
 
     await new Promise((resolve) => setTimeout(resolve, 1000));

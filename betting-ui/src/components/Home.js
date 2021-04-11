@@ -14,7 +14,6 @@ export class Home extends Component {
         
         this.state = {
             programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
-            alicePrivateKey: '61,167,19,154,243,231,175,159,135,78,194,167,159,147,246,36,147,139,124,159,147,247,46,230,41,103,128,58,44,4,98,196,90,124,250,30,176,253,215,147,120,179,77,163,70,168,193,139,122,43,176,86,31,252,85,219,45,90,188,85,95,250,220,47',
             aliceXPubKey: 'AtL2vQYJT8Him658iph4JwYWAxdN3YJ7KFd1rx3Yz5oi',
             aliceYPubKey: 'EqakiVnrLfJhnN927D5SJ9mAgubGbLaCdB1eTrdzTffv',
             aliceXTokens: 1,
@@ -42,7 +41,6 @@ export class Home extends Component {
     async handleInitEscrow(event) {
 
         let responseData = await initEscrow(
-            this.state.alicePrivateKey,
             this.state.aliceXPubKey,
             this.state.aliceXTokens,
             this.state.aliceYPubKey,
@@ -72,12 +70,13 @@ export class Home extends Component {
     }
 
     async handleCancel(event) {
-        Cancel(
-            this.state.alicePrivateKey,
+        await Cancel(
             this.state.aliceXPubKey,
             this.state.escrowAccountPubkey,
             this.state.aliceXTokens,
             this.state.programId);
+
+        this.checkEscrowClosure(this.escrowXAccount); 
 
         event.preventDefault();
     }
@@ -102,6 +101,23 @@ export class Home extends Component {
         }
     }
 
+    async checkEscrowClosure (escrowXAccount) {
+        for (var i = 0; i < 5; i++) {
+            let res = await loadTokensInEscrow(escrowXAccount);
+
+            if (typeof res?.result == 'undefined'){
+                this.setState({
+                    escrowAccountTokens: 0,
+                    escrowAccountPubkey: ''
+                    });
+                this.escrowXAccount = '';
+                    break;
+                }
+
+            await this.timer(4000);
+        }
+    }
+
     render() {
         return (
             <div className="mt-5 d-flex justify-content-left">
@@ -115,10 +131,6 @@ export class Home extends Component {
                         </label>
                     </div>
                     <div>
-                        <label>
-                            Alice Privatekey:
-                            <input type="text" name="alicePrivateKey" value={this.state.alicePrivateKey} onChange={this.handleChange} />
-                        </label>
                         <label>
                             Bob Privatekey:
                             <input type="text" name="bobPrivateKey" value={this.state.bobPrivateKey} onChange={this.handleChange} />
