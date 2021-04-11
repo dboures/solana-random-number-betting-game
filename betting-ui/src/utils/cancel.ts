@@ -5,6 +5,8 @@ const BN = require("bn.js");
 
 const connection = new Connection("http://localhost:8899", 'singleGossip');
 
+
+//TODO: need to protect from errors when there's nothing in there
 export const Cancel = async (
     privateKeyByteArray: string,
     cancelerXAccount: string,

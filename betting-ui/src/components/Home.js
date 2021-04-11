@@ -15,14 +15,14 @@ export class Home extends Component {
         this.state = {
             programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
             alicePrivateKey: '61,167,19,154,243,231,175,159,135,78,194,167,159,147,246,36,147,139,124,159,147,247,46,230,41,103,128,58,44,4,98,196,90,124,250,30,176,253,215,147,120,179,77,163,70,168,193,139,122,43,176,86,31,252,85,219,45,90,188,85,95,250,220,47',
-            aliceXPubKey: '5dGfJ9uDYVZaRwbZq3YhrncoeXYvoN3rLuR43e6mb2RA',
-            aliceYPubKey: '8qK3LK7bWJCb2EtLN4xvEVCbasaS9pooFGpJLVS9z8pT',
+            aliceXPubKey: 'AtL2vQYJT8Him658iph4JwYWAxdN3YJ7KFd1rx3Yz5oi',
+            aliceYPubKey: 'EqakiVnrLfJhnN927D5SJ9mAgubGbLaCdB1eTrdzTffv',
             aliceXTokens: 1,
             aliceYTokens: 1,
 
             bobPrivateKey: '211,208,37,61,33,9,231,26,133,105,242,232,146,33,169,107,48,214,29,26,82,238,244,41,131,146,218,91,104,27,233,107,246,38,23,174,204,84,149,244,187,85,115,186,89,32,213,245,121,100,154,223,23,112,23,128,93,48,189,1,157,196,255,245',
-            bobXPubKey: 'A2Bx8JUcdn2DBuDK8d3enNwziRyjauouHTbnvAVEGH83',
-            bobYPubKey: 'Aeg3hWvWEyPsZVumTvYhunUkXGFPabF8rWcoaikBFC5E',
+            bobXPubKey: 'GTgZDXU9PGCUGedZ11364TW2PS9oFVwZyMF6m3EwdSpT',
+            bobYPubKey: '6kwXqT1XVh1carXQBUGjKEjsXTPWmV9eTyfKMaZn649Z',
             bobXTokens: 1,
             bobYTokens: 1,
 
@@ -49,15 +49,13 @@ export class Home extends Component {
             this.state.aliceYTokens,
             this.state.programId);
 
-        this.setState({
-            escrowAccountPubkey: responseData.escrowAccountPubkey
-            });
-
-        this.escrowXAccount = responseData.XTokenTempAccountPubkey;
-
-        //call pattern to update
-        this.getEscrowTokens(this.escrowXAccount); 
-
+        if (responseData.isInitialized) {
+            this.setState({
+                escrowAccountPubkey: responseData.escrowAccountPubkey
+                });
+            this.escrowXAccount = responseData.XTokenTempAccountPubkey;
+            this.getEscrowTokens(this.escrowXAccount); 
+        }
         event.preventDefault();
     }
 
