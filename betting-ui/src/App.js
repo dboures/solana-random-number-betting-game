@@ -1,6 +1,8 @@
 import './App.css';
-
-import {Home} from './components/Home'
+import { BrowserRouter, Route } from "react-router-dom";
+import CreateBet from './components/CreateBet';
+import ExecuteBet from './components/ExecuteBet';
+import BetList from './components/BetList';
 
 function App() {
   return (
@@ -11,7 +13,11 @@ function App() {
         </span>
       </header>
       <div className="container">
-      <Home></Home>
+      <BrowserRouter>
+          <Route path="/" exact component={BetList} />
+          <Route path="/bets/new" exact component={CreateBet} />
+          <Route path="/bets/:id" exact component={ExecuteBet} />
+      </BrowserRouter>
       </div>
     </div>
   );

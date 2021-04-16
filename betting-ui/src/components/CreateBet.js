@@ -1,15 +1,26 @@
-import React, { Component } from 'react';
+import  { Component } from 'react';
 import {Swap} from '../utils/swap';
 import {initEscrow} from '../utils/initEscrow';
 import {Cancel} from '../utils/cancel';
 import { loadTokensInEscrow } from '../utils/loadTokensInEscrow';
 import {Connect} from './Connect';
+import {db} from '../utils/firebase';
+
+function addBet(initializerTokenPubKey, escrowAccountPubkey, tokens,lower,upper) {
+    db.collection('Bets').add({
+        'escrowAccountPubkey': escrowAccountPubkey,
+        'initializerTokenPubKey':initializerTokenPubKey,
+        'tokens':tokens,
+        'lower':lower,
+        'upper':upper
+    });
+}
 
 
-export class Home extends Component {
+export default class CreateBet extends Component {
     constructor(props) {
         super(props);
-
+        
         this.escrowXAccount = ''
         
         this.state = {
@@ -52,7 +63,9 @@ export class Home extends Component {
                 escrowAccountPubkey: responseData.escrowAccountPubkey
                 });
             this.escrowXAccount = responseData.XTokenTempAccountPubkey;
-            this.getEscrowTokens(this.escrowXAccount); 
+            this.getEscrowTokens(this.escrowXAccount);
+            addBet(this.state.aliceXPubKey, responseData.XTokenTempAccountPubkey, this.state.aliceXTokens, 1, 5, true);// TODO: implement range when we get to randomness
+
         }
         event.preventDefault();
     }
