@@ -1,7 +1,7 @@
 import  { Component } from 'react';
-import {Swap} from '../utils/swap';
+// import {Swap} from '../utils/swap';
 import {initEscrow} from '../utils/initEscrow';
-import {Cancel} from '../utils/cancel';
+// import {Cancel} from '../utils/cancel';
 import { loadTokensInEscrow } from '../utils/loadTokensInEscrow';
 import {Connect} from './Connect';
 import {db} from '../utils/firebase';
@@ -70,29 +70,29 @@ export default class CreateBet extends Component {
         event.preventDefault();
     }
 
-    async handleSwap(event) {
-        Swap(
-            this.state.bobPrivateKey,
-            this.state.escrowAccountPubkey,
-            this.state.bobXPubKey,
-            this.state.bobYPubKey,
-            this.state.bobXTokens,
-            this.state.programId);
+    // async handleSwap(event) {
+    //     Swap(
+    //         this.state.bobPrivateKey,
+    //         this.state.escrowAccountPubkey,
+    //         this.state.bobXPubKey,
+    //         this.state.bobYPubKey,
+    //         this.state.bobXTokens,
+    //         this.state.programId);
 
-        event.preventDefault();
-    }
+    //     event.preventDefault();
+    // }
 
-    async handleCancel(event) {
-        await Cancel(
-            this.state.aliceXPubKey,
-            this.state.escrowAccountPubkey,
-            this.state.aliceXTokens,
-            this.state.programId);
+    // async handleCancel(event) {
+    //     await Cancel(
+    //         this.state.aliceXPubKey,
+    //         this.state.escrowAccountPubkey,
+    //         this.state.aliceXTokens,
+    //         this.state.programId);
 
-        this.checkEscrowClosure(this.escrowXAccount); 
+    //     this.checkEscrowClosure(this.escrowXAccount); 
 
-        event.preventDefault();
-    }
+    //     event.preventDefault();
+    // }
 
     // Returns a Promise that resolves after "ms" Milliseconds
     timer(ms) {
@@ -201,8 +201,8 @@ export default class CreateBet extends Component {
                     </div>
                 </form>
                 <button onClick={this.handleInitEscrow.bind(this)}>Init Escrow</button>
-                <button onClick={this.handleCancel.bind(this)}>Cancel</button>
-                <button onClick={this.handleSwap.bind(this)}>Swap</button>
+                {/* <button onClick={this.handleCancel.bind(this)}>Cancel</button> */}
+                {/* <button onClick={this.handleSwap.bind(this)}>Swap</button> */}
             </div>
         )
     }

@@ -3,6 +3,7 @@ import { BrowserRouter, Route } from "react-router-dom";
 import CreateBet from './components/CreateBet';
 import ExecuteBet from './components/ExecuteBet';
 import BetList from './components/BetList';
+import { Connect } from './components/Connect';
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <span>
           header here
         </span>
+        <Connect/>
       </header>
       <div className="container">
       <BrowserRouter>
