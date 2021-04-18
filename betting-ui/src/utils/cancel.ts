@@ -4,8 +4,7 @@ import { EscrowLayout, ESCROW_ACCOUNT_DATA_LAYOUT } from "./layout";
 const Wallet = require('@project-serum/sol-wallet-adapter').default;
 const BN = require("bn.js");
 
-const connection = new Connection("http://localhost:8899", 'singleGossip');
-
+const connection = new Connection("http://localhost:8899", 'singleGossip');  // TODO: get this from context too I think
 
 //TODO: need to protect from errors when there's nothing in there
 export const Cancel = async (

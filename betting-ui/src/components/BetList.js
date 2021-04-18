@@ -44,7 +44,7 @@ export default class BetList extends Component {
             <td>
                 <Link to={"/bets/" + bet.id}>
                     <button>
-                        Take Bet
+                        View Bet
                     </button>
                 </Link>
             </td>  
@@ -62,7 +62,7 @@ export default class BetList extends Component {
             <div className="mt-5 d-flex justify-content-left">
                 <h3>The bets will be listed here</h3>
                 <div className="create-bets">
-                    <Link to="/bets/new">
+                    <Link to="/create">
                     <button>
                         Create Bets
                     </button>

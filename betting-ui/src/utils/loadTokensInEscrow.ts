@@ -1,5 +1,4 @@
 export const loadTokensInEscrow = async (escrowTokenAccount: string) => {
-
     let tokenResponse;
     await fetch("http://localhost:8899", {
         method: "POST",headers: {

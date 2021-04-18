@@ -3,6 +3,8 @@ import { Account, Connection, PublicKey, Transaction, TransactionInstruction } f
 import { ESCROW_ACCOUNT_DATA_LAYOUT, EscrowLayout } from "./layout"; 
 const BN = require("bn.js");
 
+//TODO: refactor with wallet
+
 const connection = new Connection("http://localhost:8899", 'singleGossip');
 
 export const Swap = async (

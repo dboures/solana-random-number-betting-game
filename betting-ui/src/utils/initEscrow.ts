@@ -2,28 +2,21 @@ import { AccountLayout, Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Account, Connection, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { ESCROW_ACCOUNT_DATA_LAYOUT, EscrowLayout } from "./layout";
 const bs58 = require('bs58');
-const Wallet = require('@project-serum/sol-wallet-adapter').default;
 const BN = require("bn.js");
 
-const connection = new Connection("http://localhost:8899", 'singleGossip');
-//let connection = new Connection(clusterApiUrl('devnet'));
+const connection = new Connection("http://localhost:8899", 'singleGossip'); // TODO: get this from context too I think
 
-export const initEscrow = async ( // TODO: need to error proof eveything
+ // TODO: need to error proof eveything
+export const initEscrow = async (
+    wallet: any,
     initializerXTokenAccountPubkeyString: string,
     amountXTokensToSendToEscrow: number,
     initializerReceivingTokenAccountPubkeyString: string,
     expectedAmount: number,
     escrowProgramIdString: string) => {
 
-    let providerUrl = 'https://www.sollet.io';
-    let wallet = new Wallet(providerUrl);
-
-    //TODO: refactor wallet into it's own thing
-    //IDK about these messages
-    wallet.on('connect', (publicKey: { toBase58: () => string; }) => console.log('Connected to ' + publicKey.toBase58()));
-    wallet.on('disconnect', () => console.log('Disconnected'));
-    await wallet.connect();
     let initializerKey: PublicKey;
+    //if wallet undefined, throw alert or something
     initializerKey = wallet._publicKey;
 
     const initializerXTokenAccountPubkey = new PublicKey(initializerXTokenAccountPubkeyString);
