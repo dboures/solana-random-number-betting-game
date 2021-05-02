@@ -1,18 +1,20 @@
 import  { useState, useEffect } from 'react';
+import { useContext } from 'react';
 import { MContext } from '../components/ConnectionProvider';
 import {initEscrow} from '../utils/initEscrow';
 import {Cancel} from '../utils/cancel';
-import {getUserTokenInformation, loadTokens} from '../utils/tokens';
+import {getUserTokenInformation} from '../utils/tokens';
 import { Link } from 'react-router-dom';
 import {db} from '../utils/firebase';
 
 
 function CreateBet() {
+    const connectionContext = useContext(MContext);
     const [state, setState] = useState({
         escrowXAccount: '',
         programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
         aliceXPubkey: '',
-        aliceXTokens: 10,
+        aliceXTokens: 1,
         escrowAccountPubkey: '',
         escrowAccountTokens: 0,
         tokens: [],
@@ -21,13 +23,14 @@ function CreateBet() {
     });
 
     useEffect(async () => {
-        let tokensList = await loadTokens();
-        let startingTokenName = tokensList[0].name;
-        setState({ ...state,
-            tokens: tokensList,
-            tokenName: startingTokenName
-        })
-      }, []);
+        if(connectionContext.state.wallet.connected){
+            let tokensList = await getUserTokenInformation(connectionContext.state.connection, connectionContext.state.wallet)
+            setState({ ...state,
+                tokens: tokensList,
+                tokenName: tokensList[0].name
+            })
+        }
+      }, [connectionContext.state.wallet.connected]);
 
     function handleChange(event) {
         setState({ ...state,
@@ -35,18 +38,11 @@ function CreateBet() {
         })
     }
 
-    async function handleTokenChange(event, connection, wallet) {
-        if (state.tokens.length == 0) {
-            return;
-        }
-        let tokenPubkeyString = state.tokens.find(token => {return token.name === event.target.value}).address;
-        if (typeof(tokenPubkeyString) === 'undefined') {
-            return;
-        }
-        let userTokens = await getUserTokenInformation(connection, wallet);
+    async function handleTokenChange(event) {
 
-        const newPubkey = userTokens.find(token => {return token.mintAddress === tokenPubkeyString}).userTokenAddress;
+        const newPubkey = state.tokens?.find(token => {return token.name === event.target.value})?.userTokenAddress;
         if (typeof(newPubkey) === 'undefined') {
+            console.log('token not found');
             return;
         }
 

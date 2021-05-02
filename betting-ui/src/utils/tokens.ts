@@ -2,13 +2,6 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { TokenListProvider } from "@solana/spl-token-registry";
 import { Connection } from "@solana/web3.js";
 
-export const loadTokens = async (): Promise<TokenInfo[]> => {
-    const TokenProvider = await new TokenListProvider().resolve()
-    
-    const tokenlist = TokenProvider.filterByClusterSlug('mainnet-beta').getList();
-    return tokenlist;
-}
-
 export const getUserTokenInformation = async (
     conn : Connection,
     wallet: any
@@ -19,14 +12,33 @@ export const getUserTokenInformation = async (
       },
       'confirmed' ).catch(error => console.log(error));
 
-      console.log(userTokenAccounts);
+      const TokenProvider = await new TokenListProvider().resolve();
+      const rawTokenlist = TokenProvider.filterByClusterSlug('mainnet-beta').getList();
+
       if (userTokenAccounts instanceof Object) {
-          let ans = userTokenAccounts.value.map(acct => ({
+          let ans : UserTokenInfo[] = userTokenAccounts.value.map(acct => ({
             userTokenAddress: acct.pubkey.toBase58(),
             mintAddress: acct.account.data.parsed.info.mint,
             maxAmount: acct.account.data.parsed.info.tokenAmount.uiAmount,
-
           }));
+
+          if(ans.length == 0) {
+            return []
+          }
+
+          ans.forEach(userToken => {
+            userToken.name = userToken.mintAddress
+            if(rawTokenlist.map(token => token.address).includes(userToken.mintAddress)) {
+              let rawToken = rawTokenlist.find(rt => {
+                return rt.address == userToken.mintAddress
+              });
+
+              userToken.symbol = rawToken?.symbol
+              userToken.name = rawToken?.name        
+              userToken.iconUri = rawToken?.logoURI
+            }
+          })
+          
           return ans;
       } 
       
@@ -35,22 +47,19 @@ export const getUserTokenInformation = async (
 }
 
 
-  export interface TokenInfo {
-    symbol: string
-    name: string
-  
-    address: string
+  export interface RawTokenInfo {
+    symbol: string,
+    name: string,
+    address: string,
     decimals: number
-  
-    // tokenAccountAddress?: string
-    // balance?: TokenAmount
   }
 
   export interface UserTokenInfo {
-  
-    mintAddress:string
-    userTokenAddress: string
-    maxAmount: number
-  
+    symbol?: string,
+    name?: string,
+    mintAddress:string,
+    userTokenAddress?: string,
+    maxAmount?: number,
+    iconUri?: string
   }
 

@@ -8,9 +8,9 @@ export const MContext = React.createContext();  //exporting context object
 class ConnectionProvider extends Component {
     userWallet = new Wallet("https://www.sollet.io");
 
-    state = {
+    state = {                   // "http://localhost:8899"     https://api.mainnet-beta.solana.com
         connection: new Connection("http://localhost:8899", 'singleGossip'),
-        wallet: this.userWallet 
+        wallet: this.userWallet
     }
     render() {
         return (
@@ -18,9 +18,9 @@ class ConnectionProvider extends Component {
                 {   
                     state: this.state,
                     connect:  async () => {
-                            this.state.wallet.on('connect', publicKey => console.log('Connected to ' + publicKey.toBase58()));
-                            this.state.wallet.on('disconnect', () => console.log('Disconnected'));
-                            await this.state.wallet.connect();
+                        this.state.wallet.on('connect', publicKey => console.log('Connected to ' + publicKey.toBase58()));
+                        this.state.wallet.on('disconnect', () => console.log('Disconnected'));
+                        await this.state.wallet.connect();
                         this.setState({ wallet: this.state.wallet });
                     }
                 }}>

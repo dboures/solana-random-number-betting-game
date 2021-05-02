@@ -8,16 +8,12 @@ const connection = new Connection("http://localhost:8899", 'singleGossip');  // 
 
 //TODO: need to protect from errors when there's nothing in there
 export const Cancel = async (
+    wallet: any,
     cancelerXAccount: string,
     escrowAccount: string,
     amount: number,
     programIdString: string) => {
 
-    let providerUrl = 'https://www.sollet.io';
-    let wallet = new Wallet(providerUrl);
-
-    //TODO: refactor wallet into it's own thing
-    await wallet.connect();
     let cancelerKey: PublicKey;
     cancelerKey = wallet._publicKey;
 
@@ -35,6 +31,9 @@ export const Cancel = async (
     }
     const decodedEscrowLayout = ESCROW_ACCOUNT_DATA_LAYOUT.decode(encodedEscrowState) as EscrowLayout;
     const escrowXPubkey =  new PublicKey(decodedEscrowLayout.initializerTempTokenAccountPubkey);
+
+    console.log(decodedEscrowLayout.initializerTempTokenAccountPubkey);
+    console.log(escrowXPubkey);
 
     const cancelInstruction = new TransactionInstruction({
         programId,
