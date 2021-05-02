@@ -4,15 +4,12 @@ import { ESCROW_ACCOUNT_DATA_LAYOUT, EscrowLayout } from "./layout";
 const bs58 = require('bs58');
 const BN = require("bn.js");
 
-const connection = new Connection("http://localhost:8899", 'singleGossip'); // TODO: get this from context too I think
-
  // TODO: need to error proof eveything
 export const initEscrow = async (
+    connection: Connection,
     wallet: any,
     initializerXTokenAccountPubkeyString: string,
     amountXTokensToSendToEscrow: number,
-    initializerReceivingTokenAccountPubkeyString: string,
-    expectedAmount: number,
     escrowProgramIdString: string) => {
 
     let initializerKey: PublicKey;
@@ -21,7 +18,7 @@ export const initEscrow = async (
 
     const initializerXTokenAccountPubkey = new PublicKey(initializerXTokenAccountPubkeyString);
     //@ts-expect-error
-    const XTokenMintAccountPubkey = new PublicKey((await connection.getParsedAccountInfo(initializerXTokenAccountPubkey, 'singleGossip')).value!.data.parsed.info.mint);
+    const XTokenMintAccountPubkey = new PublicKey((await connection.getParsedAccountInfo(initializerXTokenAccountPubkey, 'singleGossip')).value!.data.parsed.info.mint); // handle error
 
     const tempTokenAccount = new Account();
     const createTempTokenAccountIx = SystemProgram.createAccount({
@@ -51,12 +48,11 @@ export const initEscrow = async (
         keys: [
             { pubkey: initializerKey, isSigner: true, isWritable: false },
             { pubkey: tempTokenAccount.publicKey, isSigner: false, isWritable: true },
-            { pubkey: new PublicKey(initializerReceivingTokenAccountPubkeyString), isSigner: false, isWritable: false },
             { pubkey: escrowAccount.publicKey, isSigner: false, isWritable: true },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
             { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
         ],
-        data: Buffer.from(Uint8Array.of(0, ...new BN(expectedAmount).toArray("le", 8)))
+        data: Buffer.from(Uint8Array.of(0, ...new BN(amountXTokensToSendToEscrow).toArray("le", 8)))
     })
 
     let tx = new Transaction({feePayer: initializerKey})
@@ -90,8 +86,7 @@ export const initEscrow = async (
         escrowAccountPubkey: escrowAccount.publicKey.toBase58(),
         isInitialized: !!decodedEscrowState.isInitialized,
         initializerAccountPubkey: new PublicKey(decodedEscrowState.initializerPubkey).toBase58(),
-        XTokenTempAccountPubkey: new PublicKey(decodedEscrowState.initializerTempTokenAccountPubkey).toBase58(),
-        initializerYTokenAccount: new PublicKey(decodedEscrowState.initializerReceivingTokenAccountPubkey).toBase58(),
+        escrowXAccount: new PublicKey(decodedEscrowState.initializerTempTokenAccountPubkey).toBase58(),
         expectedAmount: new BN(decodedEscrowState.expectedAmount, 10, "le").toNumber()
     };
 }
