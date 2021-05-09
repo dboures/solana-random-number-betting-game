@@ -63,27 +63,9 @@ impl Processor {
 
         let initializers_token_account = next_account_info(account_info_iter)?; // 4. `[writable]` The initializer's token account (to receive tokens)
                                                                                 // msg!("get escrow account");
-        msg!(
-            "initializers_token_account key: {}",
-            &initializers_token_account.key
-        );
-        msg!(
-            "initializers_token_account owner: {}",
-            &initializers_token_account.owner
-        );
-        msg!(
-            "initializers_main_account key: {}",
-            &initializers_main_account.key
-        );
-        // if *initializers_token_account.owner != *initializers_main_account.key {
-        // TODO: need to check this account using escrow, owner is token program and we dont want people to be able to pass in whatever account
-        // return Err(ProgramError::InvalidAccountData);
-        // }
-        msg!("passed it");
 
         let escrow_account = next_account_info(account_info_iter)?; // 5. `[writable]` The escrow account holding the escrow info
 
-        // msg!("unpack");
         let escrow_info = Escrow::unpack(&escrow_account.data.borrow())?;
 
         if escrow_info.temp_token_account_pubkey != *pdas_temp_token_account.key {
@@ -94,22 +76,12 @@ impl Processor {
             return Err(ProgramError::InvalidAccountData);
         }
 
+        if escrow_info.init_token_pubkey != *initializers_token_account.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
         let token_program = next_account_info(account_info_iter)?; // 6. `[]` The token program
         let pda_account = next_account_info(account_info_iter)?; // 7. `[]` The PDA account
-
-        msg!("takers_token_account: {}", &takers_token_account.key);
-        msg!("pdas_temp_token_account: {}", &pdas_temp_token_account.key);
-        msg!(
-            "initializers_main_account: {}",
-            &initializers_main_account.key
-        );
-        msg!(
-            "initializers_token_account: {}",
-            &initializers_token_account.key
-        );
-        msg!("escrow_account: {}", &escrow_account.key);
-        msg!("token_program: {}", &token_program.key);
-        msg!("pda_account: {}", &pda_account.key);
 
         // TODO: figure out how to get randomness, lower and upper in here
         // let mut rng = rand::thread_rng();
@@ -231,6 +203,9 @@ impl Processor {
         }
 
         let escrow_account = next_account_info(account_info_iter)?;
+
+        let init_token_account = next_account_info(account_info_iter)?;
+
         let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
 
         if !rent.is_exempt(escrow_account.lamports(), escrow_account.data_len()) {
@@ -244,6 +219,7 @@ impl Processor {
 
         escrow_info.is_initialized = true;
         escrow_info.initializer_pubkey = *initializer.key;
+        escrow_info.init_token_pubkey = *init_token_account.key;
         escrow_info.temp_token_account_pubkey = *temp_token_account.key;
         escrow_info.expected_amount = amount;
         // escrow_info.lower = lower;

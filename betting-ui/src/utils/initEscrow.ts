@@ -49,8 +49,9 @@ export const initEscrow = async (
             { pubkey: initializerKey, isSigner: true, isWritable: false },
             { pubkey: tempTokenAccount.publicKey, isSigner: false, isWritable: true },
             { pubkey: escrowAccount.publicKey, isSigner: false, isWritable: true },
+            { pubkey: initializerXTokenAccountPubkey, isSigner: false, isWritable: false },
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
-            { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+            { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
         ],
         data: Buffer.from(Uint8Array.of(0, ...new BN(amountXTokensToSendToEscrow).toArray("le", 8)))
     })
