@@ -30,9 +30,9 @@ export const Cancel = async (
         throw new Error("Could not find escrow at given address!")
     }
     const decodedEscrowLayout = ESCROW_ACCOUNT_DATA_LAYOUT.decode(encodedEscrowState) as EscrowLayout;
-    const escrowXPubkey =  new PublicKey(decodedEscrowLayout.initializerTempTokenAccountPubkey);
+    const escrowXPubkey =  new PublicKey(decodedEscrowLayout.tempTokenAccountPubkey);
 
-    console.log(decodedEscrowLayout.initializerTempTokenAccountPubkey);
+    console.log(decodedEscrowLayout.tempTokenAccountPubkey);
     console.log(escrowXPubkey);
 
     const cancelInstruction = new TransactionInstruction({

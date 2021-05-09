@@ -13,6 +13,7 @@ export default class BetList extends Component {
                     'escrowAccountPubkey': data.escrowAccountPubkey,
                     'initializerTokenPubKey': data.initializerTokenPubKey,
                     'tokens': data.tokens,
+                    'tokenName': data.tokenName,
                     'lower': data.lower,
                     'upper': data.upper
                 });
@@ -38,7 +39,8 @@ export default class BetList extends Component {
         <tr key={bet.id}>
             <td>{bet.escrowAccountPubkey}</td>
             <td>{bet.initializerTokenPubKey}</td>  
-            <td>{bet.tokens}</td>  
+            <td>{bet.tokens}</td>    
+            <td>{bet.tokenName}</td>  
             <td>{bet.lower}</td>  
             <td>{bet.upper}</td>
             <td>
@@ -75,6 +77,7 @@ export default class BetList extends Component {
                                 <th>Escrow Account Pubkey</th>
                                 <th>Initializer Token Account Pubkey</th>
                                 <th>Token At Stake</th>
+                                <th>Token Type</th>
                                 <th>Lower Bound</th>
                                 <th>Upper Bound</th>
                                 <th></th>

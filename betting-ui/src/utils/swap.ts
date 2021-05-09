@@ -1,6 +1,7 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { Account, Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { Connection, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { ESCROW_ACCOUNT_DATA_LAYOUT, EscrowLayout } from "./layout"; 
+const bs58 = require('bs58');
 const BN = require("bn.js");
 
 //TODO: refactor with wallet
@@ -8,17 +9,23 @@ const BN = require("bn.js");
 const connection = new Connection("http://localhost:8899", 'singleGossip');
 
 export const Swap = async (
-    privateKeyByteArray: string,
+    wallet: any,
     escrowAccountAddressString: string,
     takerXTokenAccountAddressString: string,
-    takerYTokenAccountAddressString: string,
+    initTokenString: string,
     takerExpectedXTokenAmount: number,
     programIdString: string,
 ) => {
-    const takerAccount = new Account(privateKeyByteArray.split(',').map(s => parseInt(s)));
+
+    console.log('inside swap');
+    let takerKey: PublicKey;
+    //if wallet undefined, throw alert or something
+    takerKey = wallet._publicKey;
+
+    console.log(initTokenString);
     const escrowAccountPubkey = new PublicKey(escrowAccountAddressString);
-    const takerXTokenAccountPubkey = new PublicKey(takerXTokenAccountAddressString);
-    const takerYTokenAccountPubkey = new PublicKey(takerYTokenAccountAddressString);
+    const takerTokenAccountPubkey = new PublicKey(takerXTokenAccountAddressString);
+    const initTokenAccountPubkey = new PublicKey(initTokenString);
     const programId = new PublicKey(programIdString);
 
     let encodedEscrowState;
@@ -32,28 +39,60 @@ export const Swap = async (
         escrowAccountPubkey: escrowAccountPubkey,
         isInitialized: !!decodedEscrowLayout.isInitialized,
         initializerAccountPubkey: new PublicKey(decodedEscrowLayout.initializerPubkey),
-        XTokenTempAccountPubkey: new PublicKey(decodedEscrowLayout.initializerTempTokenAccountPubkey),
-        initializerYTokenAccount: new PublicKey(decodedEscrowLayout.initializerReceivingTokenAccountPubkey),
+        escrowTokenAccount: new PublicKey(decodedEscrowLayout.tempTokenAccountPubkey),
         expectedAmount: new BN(decodedEscrowLayout.expectedAmount, 10, "le")
     };
 
+    console.log(decodedEscrowLayout);
+
+
+    console.log('find PA');
     const PDA = await PublicKey.findProgramAddress([Buffer.from("escrow")], programId);
+
+    console.log('keys');
+    console.log(takerKey.toBase58());
+    console.log(takerTokenAccountPubkey.toBase58());
+    console.log(escrowState.escrowTokenAccount.toBase58());
+    console.log(escrowState.initializerAccountPubkey.toBase58());
+    console.log(initTokenAccountPubkey.toBase58());
+    console.log(escrowAccountPubkey.toBase58());
+    console.log(TOKEN_PROGRAM_ID.toBase58());
+    console.log(PDA[0].toBase58());
 
     const exchangeInstruction = new TransactionInstruction({
         programId,
         data: Buffer.from(Uint8Array.of(1, ...new BN(takerExpectedXTokenAmount).toArray("le", 8))),
         keys: [
-            { pubkey: takerAccount.publicKey, isSigner: true, isWritable: false },
-            { pubkey: takerYTokenAccountPubkey, isSigner: false, isWritable: true },
-            { pubkey: takerXTokenAccountPubkey, isSigner: false, isWritable: true },
-            { pubkey: escrowState.XTokenTempAccountPubkey, isSigner: false, isWritable: true},
+            { pubkey: takerKey, isSigner: true, isWritable: false },
+            { pubkey: takerTokenAccountPubkey, isSigner: false, isWritable: true },
+            { pubkey: escrowState.escrowTokenAccount, isSigner: false, isWritable: true},
             { pubkey: escrowState.initializerAccountPubkey, isSigner: false, isWritable: true},
-            { pubkey: escrowState.initializerYTokenAccount, isSigner: false, isWritable: true},
+            { pubkey: initTokenAccountPubkey, isSigner: false, isWritable: true},
             { pubkey: escrowAccountPubkey, isSigner: false, isWritable: true },
             { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false},
             { pubkey: PDA[0], isSigner: false, isWritable: false}
         ] 
     })    
 
-    await connection.sendTransaction(new Transaction().add(exchangeInstruction), [takerAccount], {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    let tx = new Transaction({feePayer: takerKey}).add(exchangeInstruction);
+
+    tx.recentBlockhash = (await connection.getRecentBlockhash("max")).blockhash;
+
+    // try {
+    const response = await wallet._sendRequest('signTransaction', {
+        message: bs58.encode(tx.serializeMessage())
+        });
+        const signature = bs58.decode(response.signature);
+        tx.addSignature(takerKey, signature);
+        //   tx.partialSign(...[tempTokenAccount, escrowAccount]);
+    // }
+    // catch(error) {
+    //     return;
+    // }
+
+    let serialized = tx.serialize();
+    let txid = await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'}).catch(error => console.log(error));
+    console.log(txid);
+
+    // await connection.sendTransaction(new Transaction().add(exchangeInstruction), {skipPreflight: false, preflightCommitment: 'singleGossip'});
 }

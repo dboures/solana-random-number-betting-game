@@ -54,6 +54,9 @@ export const initEscrow = async (
         ],
         data: Buffer.from(Uint8Array.of(0, ...new BN(amountXTokensToSendToEscrow).toArray("le", 8)))
     })
+    console.log('temp and escrow');
+    console.log(tempTokenAccount.publicKey.toBase58());
+    console.log(escrowAccount.publicKey.toBase58());
 
     let tx = new Transaction({feePayer: initializerKey})
         .add(createTempTokenAccountIx, initTempAccountIx, transferXTokensToTempAccIx, createEscrowAccountIx, initEscrowIx);
@@ -75,7 +78,8 @@ export const initEscrow = async (
     }
 
     let serialized = tx.serialize();
-    await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    let txid = await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    console.log(txid);
 
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -86,7 +90,7 @@ export const initEscrow = async (
         escrowAccountPubkey: escrowAccount.publicKey.toBase58(),
         isInitialized: !!decodedEscrowState.isInitialized,
         initializerAccountPubkey: new PublicKey(decodedEscrowState.initializerPubkey).toBase58(),
-        escrowXAccount: new PublicKey(decodedEscrowState.initializerTempTokenAccountPubkey).toBase58(),
+        escrowXAccount: new PublicKey(decodedEscrowState.tempTokenAccountPubkey).toBase58(),
         expectedAmount: new BN(decodedEscrowState.expectedAmount, 10, "le").toNumber()
     };
 }

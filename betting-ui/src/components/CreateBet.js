@@ -78,10 +78,12 @@ function CreateBet() {
                     <label>
                         Alice X Token Send:
                     <input type="text" name="aliceXTokens" value={state.aliceXTokens} onChange={handleChange} />
+                    {/* TODO: decimal does not work */}
                     </label>
                 </div>
             </form>
             <button onClick={ () => handleInitEscrow(context.state.connection, context.state.wallet, state.tokenName)}>Init Escrow</button>
+            {/* TODO: is this buggy? */}
             <button onClick={ () => handleCancel(context.state.wallet)}>Cancel</button>
 
             <button onClick={ () => getUserTokenInformation(context.state.connection, context.state.wallet)}>GetUSerTokens</button>
@@ -97,11 +99,12 @@ function CreateBet() {
         
     )
 
-    function addBet(initializerTokenPubKey, escrowAccountPubkey, escrowXAccountString, tokens, lower, upper) {
+    function addBet(initializerTokenPubKey, escrowAccountPubkey, escrowXAccountString, tokens, tokenName, lower, upper) {
         db.collection('Bets').add({
+            'tokenName': tokenName,
             'escrowAccountPubkey': escrowAccountPubkey,
-            'escrowXAccountString': escrowXAccountString,
-            'initializerTokenPubKey':initializerTokenPubKey,
+            'escrowXAccountString': escrowXAccountString, // can remove this from firebase I thik
+            'initializerTokenPubKey':initializerTokenPubKey, //TODO: can i remove?
             'tokens':tokens,
             'lower':lower,
             'upper':upper
@@ -122,7 +125,7 @@ function CreateBet() {
         // event.preventDefault();
     }
     
-    async function handleInitEscrow(connection, wallet) {
+    async function handleInitEscrow(connection, wallet, tokenName) {
     
         let responseData = await initEscrow(
             connection,
@@ -131,11 +134,11 @@ function CreateBet() {
             state.aliceXTokens,
             state.programId);
         if (responseData.isInitialized) {
+            addBet(state.aliceXPubkey, responseData.escrowAccountPubkey, responseData.escrowXAccount, state.aliceXTokens, tokenName, 1, 5, true);// TODO: implement range when we get to randomness
             setState({ ...state,
                 escrowAccountPubkey: responseData.escrowAccountPubkey,
                 escrowXAccount: responseData.escrowXAccount
                 });
-            addBet(state.aliceXPubkey, responseData.escrowAccountPubkey, responseData.escrowXAccount, state.aliceXTokens, 1, 5, true);// TODO: implement range when we get to randomness
             console.log('bet added')
 
         }
