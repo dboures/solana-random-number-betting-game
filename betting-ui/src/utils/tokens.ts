@@ -1,6 +1,6 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { TokenListProvider } from "@solana/spl-token-registry";
-import { Connection } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 
 export const getUserTokenInformation = async (
     conn : Connection,
@@ -46,6 +46,22 @@ export const getUserTokenInformation = async (
     
 }
 
+export const closeFirestoreAfterEscrowCloses = async (
+  conn : Connection,
+  escrowXAccount: string
+  ): Promise<boolean> => {
+
+  for (var i = 0; i < 5; i++) {
+    let escrowPubkey = new PublicKey(escrowXAccount);
+    let escrowData = await conn.getTokenAccountBalance(escrowPubkey, 'confirmed').catch(error => {});
+    if (typeof escrowData == 'undefined') {
+      return true;
+    }
+    await new Promise(r => setTimeout(r, 4000));
+  }
+
+  return false;
+}
 
   export interface RawTokenInfo {
     symbol: string,

@@ -22,7 +22,6 @@ export const Swap = async (
     //if wallet undefined, throw alert or something
     takerKey = wallet._publicKey;
 
-    console.log(initTokenString);
     const escrowAccountPubkey = new PublicKey(escrowAccountAddressString);
     const takerTokenAccountPubkey = new PublicKey(takerXTokenAccountAddressString);
     const initTokenAccountPubkey = new PublicKey(initTokenString);
@@ -46,18 +45,18 @@ export const Swap = async (
     console.log(decodedEscrowLayout);
 
 
-    console.log('find PA');
+    // console.log('find PA');
     const PDA = await PublicKey.findProgramAddress([Buffer.from("escrow")], programId);
 
-    console.log('keys');
-    console.log(takerKey.toBase58());
-    console.log(takerTokenAccountPubkey.toBase58());
-    console.log(escrowState.escrowTokenAccount.toBase58());
-    console.log(escrowState.initializerAccountPubkey.toBase58());
-    console.log(initTokenAccountPubkey.toBase58());
-    console.log(escrowAccountPubkey.toBase58());
-    console.log(TOKEN_PROGRAM_ID.toBase58());
-    console.log(PDA[0].toBase58());
+    // console.log('keys');
+    // console.log(takerKey.toBase58());
+    // console.log(takerTokenAccountPubkey.toBase58());
+    // console.log(escrowState.escrowTokenAccount.toBase58());
+    // console.log(escrowState.initializerAccountPubkey.toBase58());
+    // console.log(initTokenAccountPubkey.toBase58());
+    // console.log(escrowAccountPubkey.toBase58());
+    // console.log(TOKEN_PROGRAM_ID.toBase58());
+    // console.log(PDA[0].toBase58());
 
     const exchangeInstruction = new TransactionInstruction({
         programId,
@@ -78,21 +77,21 @@ export const Swap = async (
 
     tx.recentBlockhash = (await connection.getRecentBlockhash("max")).blockhash;
 
-    // try {
+    try {
     const response = await wallet._sendRequest('signTransaction', {
         message: bs58.encode(tx.serializeMessage())
         });
         const signature = bs58.decode(response.signature);
         tx.addSignature(takerKey, signature);
-        //   tx.partialSign(...[tempTokenAccount, escrowAccount]);
-    // }
-    // catch(error) {
-    //     return;
-    // }
+    }
+    catch(error) {
+        console.log('error signing txn')
+        return;
+    }
 
     let serialized = tx.serialize();
     let txid = await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'}).catch(error => console.log(error));
-    console.log(txid);
 
-    // await connection.sendTransaction(new Transaction().add(exchangeInstruction), {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    return txid;
+
 }

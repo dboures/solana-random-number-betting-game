@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { db } from '../utils/firebase';
 import {Swap} from '../utils/swap';
 import {Cancel} from '../utils/cancel';
+import { closeFirestoreAfterEscrowCloses } from '../utils/tokens';
 
 function ExecuteBet(props) {
 
@@ -13,6 +14,7 @@ function ExecuteBet(props) {
         bobXTokens: 1,
 
         escrowAccountPubkey: '',
+        escrowXAccountPubkey: '',
         initTokenPubkey: '',
         escrowAccountTokens: 0
     });
@@ -22,8 +24,10 @@ function ExecuteBet(props) {
             let data = docu.data();
             setState({...state,
                 escrowAccountPubkey: data.escrowAccountPubkey,
+                escrowXAccountPubkey: data.escrowXAccountString, // TODO: please make names consistent everywhere, yikes
                 initTokenPubkey: data.initializerTokenPubKey, 
-                bobXTokens: data.tokens
+                bobXTokens: data.tokens,
+                betId: props.match.params.id
             });
         });
     }, []);
@@ -70,13 +74,13 @@ function ExecuteBet(props) {
                         </label>
                     </div>
                     <div>
-                        {/* <label>
+                        <label>
                             Escrow Account Pubkey:
                             <input type="text" name="escrowAccountPubkey" value={state.escrowAccountPubkey} onChange={handleChange} />
-                        </label> */}
+                        </label>
                         <label>
                             Escrow X Account String:
-                            <input type="text" name="escrowXAccountString" value={state.escrowXAccountString} onChange={handleChange} />
+                            <input type="text" name="escrowXAccountString" value={state.escrowXAccountPubkey} onChange={handleChange} />
                         </label>
                         <label>
                             Tokens in Escrow Account:
@@ -85,16 +89,15 @@ function ExecuteBet(props) {
                     </div>
                 </form>
                 {/* <button onClick={this.handleCancel(context.state.wallet))}>Cancel</button> */}
-                <button onClick={()=> handleSwap(context.state.wallet)}>Swap</button>
-            </div>
+                <button onClick={()=> handleSwap(context.state.connection, context.state.wallet)}>Swap</button>
+                </div>
           )}
         </MContext.Consumer>
         )
     
-        async function handleSwap(wallet) {
+        async function handleSwap(conn, wallet) {
             console.log('handle swap');
-            console.log(state.initTokenPubkey)
-            Swap(
+            let txid = await Swap(
                 wallet,
                 state.escrowAccountPubkey,
                 state.bobXPubKey,
@@ -102,9 +105,12 @@ function ExecuteBet(props) {
                 state.bobXTokens,
                 state.programId);
 
-            //TODO: needs to delete bet in firestore, otherwise there will be an error
+            console.log(txid);
+            if (closeFirestoreAfterEscrowCloses(conn, state.escrowXAccountPubkey)) {
+                await db.collection('Bets').doc(props.match.params.id).delete().catch(error => {console.log(error)});
+            }
         }
-    
+   
 
 }
 

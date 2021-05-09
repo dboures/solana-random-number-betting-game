@@ -111,7 +111,7 @@ function CreateBet() {
         });
     }
 
-    async function handleCancel(wallet) {
+    async function handleCancel(wallet) { // TODO: move cancel into the execute bet file, does it verify who is canceling??
         await Cancel(
             wallet,
             state.aliceXPubkey,
@@ -146,21 +146,3 @@ function CreateBet() {
 }
 
 export default CreateBet;
-
-
-    // async function checkEscrowClosure (escrowXAccount) {
-    //     for (var i = 0; i < 5; i++) {
-    //         let res = await loadTokensInEscrow(escrowXAccount);
-
-    //         if (typeof res?.result == 'undefined'){
-    //             setState({ ...state,
-    //                 escrowAccountTokens: 0,
-    //                 escrowAccountPubkey: ''
-    //                 });
-    //             this.escrowXAccount = '';
-    //                 break;
-    //             }
-
-    //         await this.timer(4000);
-    //     }
-    // }
