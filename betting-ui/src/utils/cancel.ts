@@ -4,10 +4,12 @@ import { EscrowLayout, ESCROW_ACCOUNT_DATA_LAYOUT } from "./layout";
 const Wallet = require('@project-serum/sol-wallet-adapter').default;
 const BN = require("bn.js");
 
-const connection = new Connection("http://localhost:8899", 'singleGossip');  // TODO: get this from context too I think
+//TODO: protect from errors when there's nothing in there
+//TODO: implement decimals
+//TODO: prevent overdrafting, it causes error
 
-//TODO: need to protect from errors when there's nothing in there
 export const Cancel = async (
+    connection: Connection,
     wallet: any,
     cancelerXAccount: string,
     escrowAccount: string,
@@ -32,6 +34,13 @@ export const Cancel = async (
     const decodedEscrowLayout = ESCROW_ACCOUNT_DATA_LAYOUT.decode(encodedEscrowState) as EscrowLayout;
     const escrowXPubkey =  new PublicKey(decodedEscrowLayout.tempTokenAccountPubkey);
 
+    const initializerKey = new PublicKey(decodedEscrowLayout.initializerPubkey);
+
+    if (cancelerKey.toBase58() != initializerKey.toBase58()){
+        console.log('you do not have the authority to cancel this transaction');
+        return;
+    }
+
     console.log(decodedEscrowLayout.tempTokenAccountPubkey);
     console.log(escrowXPubkey);
 
@@ -52,9 +61,14 @@ export const Cancel = async (
     tx.recentBlockhash = (await connection.getRecentBlockhash("max")).blockhash;
 
     let finalTx: Transaction;
-    finalTx =  await wallet.signTransaction(tx);
+    finalTx = await wallet.signTransaction(tx);
     let serialized = finalTx.serialize();
-
-    await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'});
-    return;
+    try {
+        let txid = await connection.sendRawTransaction(serialized, {skipPreflight: false, preflightCommitment: 'singleGossip'});
+    
+        return txid;
+    } catch (error) {
+        console.log('txn error');
+    }
+    return
 }

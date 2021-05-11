@@ -302,6 +302,11 @@ impl Processor {
             return Err(ProgramError::InvalidAccountData);
         }
 
+        msg!("Is someone other than the initizer cancelling?");
+        if escrow_info.init_token_pubkey != *canceller_token_account.key {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
         let token_program = next_account_info(account_info_iter)?;
 
         let (pda, bump_seed) = Pubkey::find_program_address(&[b"escrow"], program_id);

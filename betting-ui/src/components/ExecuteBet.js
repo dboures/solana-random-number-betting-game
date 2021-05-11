@@ -22,7 +22,7 @@ function ExecuteBet(props) {
     useEffect(() => {
         db.collection('Bets').doc(props.match.params.id).get().then((docu) => {
             let data = docu.data();
-            setState({...state,
+            setState({...state, //TODO: if bet doesnt exist, should redirect?
                 escrowAccountPubkey: data.escrowAccountPubkey,
                 escrowXAccountPubkey: data.escrowXAccountString, // TODO: please make names consistent everywhere, yikes
                 initTokenPubkey: data.initializerTokenPubKey, 
@@ -88,8 +88,13 @@ function ExecuteBet(props) {
                         </label>
                     </div>
                 </form>
-                {/* <button onClick={this.handleCancel(context.state.wallet))}>Cancel</button> */}
-                <button onClick={()=> handleSwap(context.state.connection, context.state.wallet)}>Swap</button>
+                {(context.state.wallet.connected ?
+                <button onClick={()=> handleSwap(context.state.connection, context.state.wallet)}>Swap</button> :
+                <button disabled={true}> Swap</button>)}
+
+                {(context.state.wallet.connected ?
+                <button onClick={ () => handleCancel(context.state.connection, context.state.wallet)}>Cancel</button> :
+                <button disabled={true}> Cancel</button>)}
                 </div>
           )}
         </MContext.Consumer>
@@ -98,6 +103,7 @@ function ExecuteBet(props) {
         async function handleSwap(conn, wallet) {
             console.log('handle swap');
             let txid = await Swap(
+                conn,
                 wallet,
                 state.escrowAccountPubkey,
                 state.bobXPubKey,
@@ -108,6 +114,31 @@ function ExecuteBet(props) {
             console.log(txid);
             if (closeFirestoreAfterEscrowCloses(conn, state.escrowXAccountPubkey)) {
                 await db.collection('Bets').doc(props.match.params.id).delete().catch(error => {console.log(error)});
+            }
+        }
+
+        async function handleCancel(conn, wallet) { // TODO: verify who is cancelingin rust
+            let txid = await Cancel(
+                conn,
+                wallet,
+                state.bobXPubKey,
+                state.escrowAccountPubkey,
+                state.bobXTokens,
+                state.programId);
+    
+            console.log(txid);
+            
+            if (closeFirestoreAfterEscrowCloses(conn, state.escrowXAccount) && typeof txid != 'undefined') {
+                const snapshot = await db.collection('Bets').where("escrowXAccountString", "==", state.escrowXAccountPubkey).get();
+    
+                if (snapshot.empty) {
+                    console.log('No matching documents.');
+                    return;
+                }  
+                
+                snapshot.forEach(doc => {
+                    db.collection('Bets').doc(doc.id).delete().catch(error => {console.log(error)});
+                });
             }
         }
    

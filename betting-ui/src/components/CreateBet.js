@@ -1,11 +1,11 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useContext } from 'react';
 import { MContext } from '../components/ConnectionProvider';
-import {initEscrow} from '../utils/initEscrow';
-import {Cancel} from '../utils/cancel';
-import {getUserTokenInformation} from '../utils/tokens';
+import { initEscrow } from '../utils/initEscrow';
+import { Cancel } from '../utils/cancel';
+import { getUserTokenInformation, closeFirestoreAfterEscrowCloses } from '../utils/tokens';
 import { Link } from 'react-router-dom';
-import {db} from '../utils/firebase';
+import { db } from '../utils/firebase';
 
 
 function CreateBet() {
@@ -82,11 +82,16 @@ function CreateBet() {
                     </label>
                 </div>
             </form>
-            <button onClick={ () => handleInitEscrow(context.state.connection, context.state.wallet, state.tokenName)}>Init Escrow</button>
             {/* TODO: is this buggy? */}
-            <button onClick={ () => handleCancel(context.state.wallet)}>Cancel</button>
+            {(context.state.wallet.connected ?
+                <button onClick={ () => handleInitEscrow(context.state.connection, context.state.wallet, state.tokenName)}>Init Escrow</button> :
+                <button disabled={true}> Swap</button>)}
 
-            <button onClick={ () => getUserTokenInformation(context.state.connection, context.state.wallet)}>GetUSerTokens</button>
+            {(context.state.wallet.connected ?
+                <button onClick={ () => handleCancel(context.state.connection, context.state.wallet)}>Cancel</button> :
+                <button disabled={true}> Cancel</button>)}
+
+            {/* <button onClick={ () => getUserTokenInformation(context.state.connection, context.state.wallet)}>GetUSerTokens</button> */}
             
             <Link to="/">
                 <button>
@@ -111,18 +116,29 @@ function CreateBet() {
         });
     }
 
-    async function handleCancel(wallet) { // TODO: move cancel into the execute bet file, does it verify who is canceling??
-        await Cancel(
+    async function handleCancel(conn, wallet) { // TODO: verify who is cancelingin rust
+        let txid = await Cancel(
+            conn,
             wallet,
             state.aliceXPubkey,
             state.escrowAccountPubkey,
             state.aliceXTokens,
             state.programId);
 
-        //should delete from firestore too
-        // this.checkEscrowClosure(this.escrowXAccount); 
+        console.log(txid);
+        
+        if (closeFirestoreAfterEscrowCloses(conn, state.escrowXAccount) && txid != 'undefined') { // TODO: plz make names consistent
+            const snapshot = await db.collection('Bets').where("escrowXAccountString", "==", state.escrowXAccount).get();
 
-        // event.preventDefault();
+            if (snapshot.empty) {
+                console.log('No matching documents.');
+                return;
+            }  
+            
+            snapshot.forEach(doc => {
+                db.collection('Bets').doc(doc.id).delete().catch(error => {console.log(error)});
+            });
+        }
     }
     
     async function handleInitEscrow(connection, wallet, tokenName) {

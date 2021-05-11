@@ -4,11 +4,8 @@ import { ESCROW_ACCOUNT_DATA_LAYOUT, EscrowLayout } from "./layout";
 const bs58 = require('bs58');
 const BN = require("bn.js");
 
-//TODO: refactor with wallet
-
-const connection = new Connection("http://localhost:8899", 'singleGossip');
-
 export const Swap = async (
+    connection: Connection,
     wallet: any,
     escrowAccountAddressString: string,
     takerXTokenAccountAddressString: string,
@@ -19,7 +16,6 @@ export const Swap = async (
 
     console.log('inside swap');
     let takerKey: PublicKey;
-    //if wallet undefined, throw alert or something
     takerKey = wallet._publicKey;
 
     const escrowAccountPubkey = new PublicKey(escrowAccountAddressString);
@@ -85,7 +81,7 @@ export const Swap = async (
         tx.addSignature(takerKey, signature);
     }
     catch(error) {
-        console.log('error signing txn')
+        console.log('error signing txn');
         return;
     }
 
