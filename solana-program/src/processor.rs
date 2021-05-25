@@ -1,5 +1,4 @@
 use crate::{error::EscrowError, instruction::EscrowInstruction, state::Escrow};
-//use rand::distributions::{Distribution, Uniform};
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -84,11 +83,9 @@ impl Processor {
         let pda_account = next_account_info(account_info_iter)?; // 7. `[]` The PDA account
 
         // TODO: figure out how to get randomness, lower and upper in here
-        // let mut rng = rand::thread_rng();
-        // let die = Uniform::from(1..7);
-        // let throw = die.sample(&mut rng);
+        // unfortunately Solana natively does not support randomness, so an oracle is needed
 
-        let throw = 4;
+        let throw = 3;
         msg!("Roll the die: {}", throw);
         if throw >= 4 {
             msg!("Alice Wins");

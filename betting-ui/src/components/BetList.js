@@ -1,94 +1,152 @@
-import { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { db } from '../utils/firebase';
+import MUIDataTable from "mui-datatables";
+import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import { useHistory } from 'react-router-dom';
 
-export default class BetList extends Component {
-    async getBets() {
+function BetList() {
+    async function  getBets() {
         const bets = []
         await db.collection('Bets').get().then((snapshot) => {
             snapshot.forEach(doc => {
                 const data = doc.data();
                 bets.push({ 
-                    'id': doc.id,
-                    'escrowAccountPubkey': data.escrowAccountPubkey,
-                    'initializerTokenPubKey': data.initializerTokenPubKey,
-                    'tokens': data.tokens,
-                    'tokenName': data.tokenName,
-                    'lower': data.lower,
-                    'upper': data.upper
+                    'Bet Id': doc.id,
+                    'Escrow Account Pubkey': data.escrowAccountPubkey,
+                    'Initializer Token PubKey': data.initializerTokenPubKey,
+                    'Token Amount': data.tokens,
+                    'Token Type': data.tokenName,
+                    'Lower': data.lower,
+                    'Upper': data.upper
                 });
             });
         });
-        this.setState({betsList: bets});
+        setState({betsList: bets}); // TODO: filter list by which tokens the user has?
+        //TODO: "my bets" feature for easy canceling
     }
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            betsList: []
+    const [state, setState] = useState({
+        betsList: []
+    });
+
+
+    const history = useHistory();
+
+    useEffect(async () => {
+        getBets()
+      }, []);
+
+const theme = 
+    createMuiTheme({
+        overrides: {
+            MUIDataTableHeadCell: { // TODO: fiddle with this
+                root: {
+                    '&:first-child': {
+                        width: '15%',
+                    },
+                    '&:nth-child(2)': {
+                        width: '20%',
+                    },
+                    '&:nth-child(3)': {
+                        width: '10%',
+                    },
+                    '&:nth-child(4)': {
+                        width: '20%',
+                    },
+                    '&:nth-child(5)': {
+                        width: '10%',
+                    },
+                    '&:nth-child(6)': {
+                        width: '10%',
+                    },
+                    '&:last-child': {
+                        width: '10%',
+                    },
+                },
+            },
+        },
+    });
+
+    const columns = [
+      {
+        name: "Bet Id",
+        options: {
+            filter: false,
+            display: false
         }
-        
+      },
+      {
+        name: "Escrow Account Pubkey",
+        options: {
+            filter: false,
+        }
+      },
+      {
+        name: "Initializer Token PubKey",
+        options: {
+          filter: false,
+        }
+      },
+      {
+        name: "Token Amount", // TODO: why are these so bad with overlap?
+        options: {
+          filter: true,
+          sort: true
+        }
+      },
+      {
+        name: "Token Type",
+        options: {
+        filter: true,
+          sort: true
+        }
+      },
+      {
+        name: "Lower",
+        options: {
+          filter: false,
+        }
+      },
+      {
+        name: "Upper",
+        options: {
+            filter: false,
+        }
+      },
+    ];
+
+    let Navigate = (rowData) => {
+      history.push("/bets/" + rowData[0]);
     }
 
-    componentDidMount() {
-        this.getBets();
-      }
+    const options = {
+      filter: true,
+      selectableRows: 'none',
+      onRowClick: Navigate,
+      filterType: 'dropdown',
+      responsive: 'vertical',
+      rowsPerPage: 10,
+    };
 
-    render() {
-        const bl = this.state.betsList.map((bet) =>
-        <tr key={bet.id}>
-            <td>{bet.escrowAccountPubkey}</td>
-            <td>{bet.initializerTokenPubKey}</td>  
-            <td>{bet.tokens}</td>    
-            <td>{bet.tokenName}</td>  
-            <td>{bet.lower}</td>  
-            <td>{bet.upper}</td>
-            <td>
-                <Link to={"/bets/" + bet.id}>
-                    <button>
-                        View Bet
-                    </button>
-                </Link>
-            </td>  
-        </tr>
-        );
-
-        const tableStyle = {
-            color: "white",
-            backgroundColor: "DodgerBlue",
-            padding: "10px",
-            fontFamily: "Arial"
-          };
-
-        return (
-            <div className="mt-5 d-flex justify-content-left">
+    return (
+        <div className="mt-5 d-flex justify-content-left">
                 <h3>The bets will be listed here</h3>
                 <div className="create-bets">
                     <Link to="/create">
-                    <button>
-                        Create Bets
-                    </button>
-                </Link>
+                        <button>
+                            Create Bets
+                        </button>
+                    </Link>
                 </div>
                 <div className="bet-table">
-                    <table style = {tableStyle}>
-                        <thead>
-                            <tr>
-                                <th>Escrow Account Pubkey</th>
-                                <th>Initializer Token Account Pubkey</th>
-                                <th>Token At Stake</th>
-                                <th>Token Type</th>
-                                <th>Lower Bound</th>
-                                <th>Upper Bound</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {bl}
-                        </tbody>
-                    </table>
+                    <MuiThemeProvider theme={theme}>
+                        <MUIDataTable title={"Active Bets"} data={state.betsList} columns={columns} options={options} />
+                    </MuiThemeProvider>
                 </div>
             </div>
-        )
-    }
+    );
+
 }
+
+export default BetList;

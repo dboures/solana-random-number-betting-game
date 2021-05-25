@@ -64,7 +64,7 @@ export const initEscrow = async (
 
     tx.recentBlockhash = (await connection.getRecentBlockhash("max")).blockhash;
 
-    try {
+    try { // TODO: check if wallet has enough coin
         const response = await wallet._sendRequest('signTransaction', {
             message: bs58.encode(tx.serializeMessage())
           });
