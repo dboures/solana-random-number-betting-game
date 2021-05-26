@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useContext } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { MContext } from '../components/ConnectionProvider';
 import { initEscrow } from '../utils/initEscrow';
 import { Cancel } from '../utils/cancel';
@@ -14,7 +13,8 @@ function CreateBet() {
         escrowXAccount: '',
         programId: 'A1W5cEG1yfqNms6hcofEiTgKsqzTM6oeHKdYMUP37cfM',
         aliceXPubkey: '',
-        aliceXTokens: 1,
+        mintAddress: '',
+        aliceXTokens: 0,
         escrowAccountPubkey: '',
         escrowAccountTokens: 0,
         tokens: [],
@@ -23,11 +23,11 @@ function CreateBet() {
     });
 
     useEffect(async () => {
-        if(connectionContext.state.wallet.connected){
-            let tokensList = await getUserTokenInformation(connectionContext.state.connection, connectionContext.state.wallet)
+        if(connectionContext.state.wallet.connected) {
+            let tokensList = await getUserTokenInformation(connectionContext.state.connection, connectionContext.state.wallet);
             setState({ ...state,
                 tokens: tokensList,
-                tokenName: tokensList[0].name
+                tokenName: tokensList[0]?.name // TODO: should limit creation if wallet has nothing
             })
         }
       }, [connectionContext.state.wallet.connected]);
@@ -39,8 +39,8 @@ function CreateBet() {
     }
 
     async function handleTokenChange(event) {
-
-        const newPubkey = state.tokens?.find(token => {return token.name === event.target.value})?.userTokenAddress;
+        const newToken = state.tokens?.find(token => {return token.name === event.target.value});
+        const newPubkey = newToken?.userTokenAddress;
         if (typeof(newPubkey) === 'undefined') {
             console.log('token not found');
             return;
@@ -48,7 +48,8 @@ function CreateBet() {
 
         setState({ ...state,
             [event.target.name]: event.target.value,
-            aliceXPubkey: newPubkey
+            aliceXPubkey: newPubkey,
+            mintAddress: newToken?.mintAddress
         });
     }
  
@@ -68,7 +69,7 @@ function CreateBet() {
                         value={state.tokenName}
                         onChange={event => handleTokenChange(event, context.state.connection, context.state.wallet)}>
                         {
-                        state.tokens.map(o => <option key={o.address} value={o.name}>{o.name}</option>)
+                        state.tokens.map(o => <option key={o.userTokenAddress} value={o.name}>{o.name}</option>)
                         }
                     </select>
                     </label>
@@ -78,7 +79,6 @@ function CreateBet() {
                     <label>
                         Alice X Token Send:
                     <input type="text" name="aliceXTokens" value={state.aliceXTokens} onChange={handleChange} />
-                    {/* TODO: decimal does not work */}
                     </label>
                 </div>
             </form>
@@ -104,15 +104,16 @@ function CreateBet() {
         
     )
 
-    function addBet(initializerTokenPubKey, escrowAccountPubkey, escrowXAccountString, tokens, tokenName, lower, upper) {
+    function addBet(initializerTokenPubKey, escrowAccountPubkey, escrowXAccountString, tokens, tokenName, lower, upper, mintAddress) {
         db.collection('Bets').add({
             'tokenName': tokenName,
             'escrowAccountPubkey': escrowAccountPubkey,
             'escrowXAccountString': escrowXAccountString, // can remove this from firebase I thik
-            'initializerTokenPubKey':initializerTokenPubKey, //TODO: can i remove?
-            'tokens':tokens,
-            'lower':lower,
-            'upper':upper
+            'initializerTokenPubKey': initializerTokenPubKey, //TODO: can i remove?
+            'mintAddress': mintAddress,
+            'tokens': tokens,
+            'lower': lower,
+            'upper': upper
         });
     }
 
@@ -150,7 +151,7 @@ function CreateBet() {
             state.aliceXTokens,
             state.programId);
         if (responseData.isInitialized) {
-            addBet(state.aliceXPubkey, responseData.escrowAccountPubkey, responseData.escrowXAccount, state.aliceXTokens, tokenName, 1, 5, true);// TODO: implement range when we get to randomness
+            addBet(state.aliceXPubkey, responseData.escrowAccountPubkey, responseData.escrowXAccount, state.aliceXTokens, tokenName, 1, 5, state.mintAddress);// TODO: implement range when we get to randomness
             setState({ ...state,
                 escrowAccountPubkey: responseData.escrowAccountPubkey,
                 escrowXAccount: responseData.escrowXAccount

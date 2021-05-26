@@ -9,7 +9,7 @@ export const initEscrow = async (
     connection: Connection,
     wallet: any,
     initializerXTokenAccountPubkeyString: string,
-    amountXTokensToSendToEscrow: number,
+    amount: number,
     escrowProgramIdString: string) => {
 
     let initializerKey: PublicKey;
@@ -18,7 +18,9 @@ export const initEscrow = async (
 
     const initializerXTokenAccountPubkey = new PublicKey(initializerXTokenAccountPubkeyString);
     //@ts-expect-error
-    const XTokenMintAccountPubkey = new PublicKey((await connection.getParsedAccountInfo(initializerXTokenAccountPubkey, 'singleGossip')).value!.data.parsed.info.mint); // handle error
+    const tokenData = (await connection.getParsedAccountInfo(initializerXTokenAccountPubkey, 'singleGossip')).value!.data.parsed.info;
+    const tokenDecimals = tokenData.tokenAmount.decimals;
+    const XTokenMintAccountPubkey = new PublicKey(tokenData.mint); // handle error
 
     const tempTokenAccount = new Account();
     const createTempTokenAccountIx = SystemProgram.createAccount({
@@ -29,8 +31,10 @@ export const initEscrow = async (
         newAccountPubkey: tempTokenAccount.publicKey
     });
     const initTempAccountIx = Token.createInitAccountInstruction(TOKEN_PROGRAM_ID, XTokenMintAccountPubkey, tempTokenAccount.publicKey, initializerKey);
+
+    const programAmount = amount * (10 ** tokenDecimals);
     const transferXTokensToTempAccIx = Token
-        .createTransferInstruction(TOKEN_PROGRAM_ID, initializerXTokenAccountPubkey, tempTokenAccount.publicKey, initializerKey, [], amountXTokensToSendToEscrow);
+        .createTransferInstruction(TOKEN_PROGRAM_ID, initializerXTokenAccountPubkey, tempTokenAccount.publicKey, initializerKey, [], programAmount);
     
     const escrowAccount = new Account();
     const escrowProgramId = new PublicKey(escrowProgramIdString);
@@ -53,7 +57,7 @@ export const initEscrow = async (
             { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false},
             { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false }
         ],
-        data: Buffer.from(Uint8Array.of(0, ...new BN(amountXTokensToSendToEscrow).toArray("le", 8)))
+        data: Buffer.from(Uint8Array.of(0, ...new BN(programAmount).toArray("le", 8)))
     })
     console.log('temp and escrow');
     console.log(tempTokenAccount.publicKey.toBase58());

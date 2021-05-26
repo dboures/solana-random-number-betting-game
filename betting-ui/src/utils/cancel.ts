@@ -5,7 +5,6 @@ const Wallet = require('@project-serum/sol-wallet-adapter').default;
 const BN = require("bn.js");
 
 //TODO: protect from errors when there's nothing in there
-//TODO: implement decimals
 //TODO: prevent overdrafting, it causes error
 
 export const Cancel = async (
@@ -44,9 +43,14 @@ export const Cancel = async (
     console.log(decodedEscrowLayout.tempTokenAccountPubkey);
     console.log(escrowXPubkey);
 
+    //@ts-expect-error
+    const tokenData = (await connection.getParsedAccountInfo(cancelerXPubkey, 'singleGossip')).value!.data.parsed.info;
+    const tokenDecimals = tokenData.tokenAmount.decimals;
+    const programAmount = amount * 10 ** tokenDecimals
+
     const cancelInstruction = new TransactionInstruction({
         programId,
-        data: Buffer.from(Uint8Array.of(2, ...new BN(amount).toArray("le", 8))),
+        data: Buffer.from(Uint8Array.of(2, ...new BN(programAmount).toArray("le", 8))),
         keys: [
             { pubkey: cancelerKey, isSigner: true, isWritable: false },
             { pubkey: cancelerXPubkey, isSigner: false, isWritable: true },
